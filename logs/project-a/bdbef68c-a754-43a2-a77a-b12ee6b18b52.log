@@ -1,0 +1,35 @@
+[2026-06-22T02:16:05.402Z] Build task created: bdbef68c-a754-43a2-a77a-b12ee6b18b52
+[2026-06-22T02:16:05.403Z] Project: project-a
+[2026-06-22T02:16:05.409Z] Image version: 1.0.0
+[2026-06-22T02:16:05.410Z] Base image: node:18-alpine
+[2026-06-22T02:16:05.411Z] Merged build args: {"APP_NAME":"app-alpha","VERSION":"1.0.0","ENV":"production","TEAM":"team-alpha"}
+[2026-06-22T02:16:05.414Z] Build task started...
+[2026-06-22T02:16:05.417Z] Dockerfile generated at: E:\temp\record13\558\builds\project-a\bdbef68c-a754-43a2-a77a-b12ee6b18b52\Dockerfile
+[2026-06-22T02:16:05.421Z] Dockerfile content:
+FROM node:18-alpine
+
+ARG APP_NAME=app-alpha
+ARG VERSION=1.0.0
+ARG ENV=production
+ARG TEAM=team-alpha
+
+LABEL version="1.0.0"
+LABEL maintainer="build-service"
+LABEL base.image="node:18-alpine"
+
+WORKDIR /app
+
+COPY . .
+
+RUN echo "Build completed at $(date)"
+
+[2026-06-22T02:16:05.422Z] Target image tag: node:1.0.0
+[2026-06-22T02:16:05.424Z] Running docker build process...
+[2026-06-22T02:16:06.563Z] Step 1/5: FROM node:18-alpine
+[2026-06-22T02:16:07.770Z] Step 2/5: Setting up build environment
+[2026-06-22T02:16:09.069Z] Step 3/5: Copying application files
+[2026-06-22T02:16:10.715Z] Step 4/5: Running build commands
+[2026-06-22T02:16:11.548Z] Step 5/5: Applying image version tag: 1.0.0
+[2026-06-22T02:16:12.070Z] Successfully tagged node:1.0.0
+[2026-06-22T02:16:12.074Z] Build completed successfully!
+[2026-06-22T02:16:12.074Z] Image built: node:1.0.0

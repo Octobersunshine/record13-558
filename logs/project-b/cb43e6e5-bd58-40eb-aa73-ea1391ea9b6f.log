@@ -1,0 +1,35 @@
+[2026-06-22T02:16:05.428Z] Build task created: cb43e6e5-bd58-40eb-aa73-ea1391ea9b6f
+[2026-06-22T02:16:05.429Z] Project: project-b
+[2026-06-22T02:16:05.430Z] Image version: 2.0.0
+[2026-06-22T02:16:05.430Z] Base image: node:20-slim
+[2026-06-22T02:16:05.431Z] Merged build args: {"APP_NAME":"app-beta","VERSION":"2.0.0","ENV":"staging","TEAM":"team-beta"}
+[2026-06-22T02:16:05.445Z] Build task started...
+[2026-06-22T02:16:05.448Z] Dockerfile generated at: E:\temp\record13\558\builds\project-b\cb43e6e5-bd58-40eb-aa73-ea1391ea9b6f\Dockerfile
+[2026-06-22T02:16:05.450Z] Dockerfile content:
+FROM node:20-slim
+
+ARG APP_NAME=app-beta
+ARG VERSION=2.0.0
+ARG ENV=staging
+ARG TEAM=team-beta
+
+LABEL version="2.0.0"
+LABEL maintainer="build-service"
+LABEL base.image="node:20-slim"
+
+WORKDIR /app
+
+COPY . .
+
+RUN echo "Build completed at $(date)"
+
+[2026-06-22T02:16:05.455Z] Target image tag: node:2.0.0
+[2026-06-22T02:16:05.456Z] Running docker build process...
+[2026-06-22T02:16:06.599Z] Step 1/5: FROM node:20-slim
+[2026-06-22T02:16:07.829Z] Step 2/5: Setting up build environment
+[2026-06-22T02:16:09.071Z] Step 3/5: Copying application files
+[2026-06-22T02:16:10.716Z] Step 4/5: Running build commands
+[2026-06-22T02:16:11.557Z] Step 5/5: Applying image version tag: 2.0.0
+[2026-06-22T02:16:12.075Z] Successfully tagged node:2.0.0
+[2026-06-22T02:16:12.075Z] Build completed successfully!
+[2026-06-22T02:16:12.076Z] Image built: node:2.0.0
