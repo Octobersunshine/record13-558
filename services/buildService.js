@@ -1,12 +1,14 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { executePush, validatePushConfig, PUSH_STATUS } = require('./pushService');
 
 const projectCache = new Map();
 
 const BUILD_STATUS = {
   PENDING: 'pending',
   BUILDING: 'building',
+  PUSHING: 'pushing',
   SUCCESS: 'success',
   FAILED: 'failed'
 };
@@ -90,9 +92,24 @@ function getProjectBuildArgs(projectId) {
   return deepClone(projectData.buildArgsCache);
 }
 
-function createBuildTask({ projectId, taskId, imageVersion, baseImage, buildArgs }) {
+function createBuildTask({ projectId, taskId, imageVersion, baseImage, buildArgs, pushConfig }) {
   const projectData = getProjectData(projectId);
   const mergedArgs = mergeWithDefaults(projectId, buildArgs);
+
+  if (pushConfig) {
+    const validation = validatePushConfig(pushConfig);
+    if (!validation.valid) {
+      return {
+        error: validation.error,
+        created: false
+      };
+    }
+  }
+
+  const sanitizedPushConfig = pushConfig ? deepClone(pushConfig) : null;
+  if (sanitizedPushConfig && sanitizedPushConfig.registry && sanitizedPushConfig.registry.password) {
+    sanitizedPushConfig.registry.password = '********';
+  }
 
   const task = {
     projectId,
@@ -100,6 +117,9 @@ function createBuildTask({ projectId, taskId, imageVersion, baseImage, buildArgs
     imageVersion,
     baseImage,
     buildArgs: mergedArgs,
+    pushConfig: sanitizedPushConfig,
+    pushStatus: pushConfig ? PUSH_STATUS.PENDING : PUSH_STATUS.SKIPPED,
+    pushResult: null,
     status: BUILD_STATUS.PENDING,
     createdAt: new Date().toISOString(),
     startedAt: null,
@@ -114,6 +134,7 @@ function createBuildTask({ projectId, taskId, imageVersion, baseImage, buildArgs
   appendLog(projectId, taskId, `Image version: ${imageVersion}`);
   appendLog(projectId, taskId, `Base image: ${baseImage}`);
   appendLog(projectId, taskId, `Merged build args: ${JSON.stringify(mergedArgs)}`);
+  appendLog(projectId, taskId, `Push target: ${pushConfig ? pushConfig.target : 'none (build only)'}`);
 
   setImmediate(() => executeBuildTask(projectId, taskId));
 
@@ -154,15 +175,57 @@ function executeBuildTask(projectId, taskId) {
 
   buildProcess.on('close', (code) => {
     if (code === 0) {
-      task.status = BUILD_STATUS.SUCCESS;
       appendLog(projectId, taskId, 'Build completed successfully!');
       appendLog(projectId, taskId, `Image built: ${imageTag}`);
+
+      if (task.pushConfig) {
+        appendLog(projectId, taskId, `Initiating push to ${task.pushConfig.target}...`);
+        task.status = BUILD_STATUS.PUSHING;
+        task.pushStatus = PUSH_STATUS.PUSHING;
+
+        executePush(projectId, taskId, imageTag, task.pushConfig, appendLog)
+          .then((result) => {
+            if (result.success) {
+              task.status = BUILD_STATUS.SUCCESS;
+              task.pushStatus = PUSH_STATUS.SUCCESS;
+              task.pushResult = result;
+              appendLog(projectId, taskId, `Push to ${task.pushConfig.target} completed successfully!`);
+              if (result.registryImage) {
+                appendLog(projectId, taskId, `Pushed image: ${result.registryImage}`);
+              }
+              if (result.localPath) {
+                appendLog(projectId, taskId, `Saved image: ${result.localPath}`);
+              }
+            } else {
+              task.status = BUILD_STATUS.FAILED;
+              task.pushStatus = PUSH_STATUS.FAILED;
+              task.pushResult = result;
+              task.error = `Push failed: ${result.error}`;
+              appendLog(projectId, taskId, `ERROR: Push failed - ${result.error}`);
+            }
+            task.completedAt = new Date().toISOString();
+          })
+          .catch((err) => {
+            task.status = BUILD_STATUS.FAILED;
+            task.pushStatus = PUSH_STATUS.FAILED;
+            task.pushResult = { success: false, error: err.message };
+            task.error = `Push error: ${err.message}`;
+            appendLog(projectId, taskId, `ERROR: Push exception - ${err.message}`);
+            task.completedAt = new Date().toISOString();
+          });
+      } else {
+        task.status = BUILD_STATUS.SUCCESS;
+        task.pushStatus = PUSH_STATUS.SKIPPED;
+        appendLog(projectId, taskId, 'No push target configured, build-only mode.');
+        task.completedAt = new Date().toISOString();
+      }
     } else {
       task.status = BUILD_STATUS.FAILED;
+      task.pushStatus = PUSH_STATUS.SKIPPED;
       task.error = `Build process exited with code ${code}`;
       appendLog(projectId, taskId, `ERROR: ${task.error}`);
+      task.completedAt = new Date().toISOString();
     }
-    task.completedAt = new Date().toISOString();
   });
 }
 
@@ -250,6 +313,7 @@ function listBuildTasks(projectId) {
       imageVersion: task.imageVersion,
       baseImage: task.baseImage,
       status: task.status,
+      pushStatus: task.pushStatus,
       createdAt: task.createdAt,
       startedAt: task.startedAt,
       completedAt: task.completedAt

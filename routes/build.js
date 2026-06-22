@@ -8,6 +8,7 @@ const {
   setProjectBuildArgs,
   getProjectBuildArgs
 } = require('../services/buildService');
+const { listLocalImages, PUSH_TARGET } = require('../services/pushService');
 
 const router = express.Router();
 
@@ -58,8 +59,33 @@ router.get('/args/:projectId', (req, res) => {
   });
 });
 
+router.get('/local-images', (req, res) => {
+  const { projectId } = req.query;
+  const images = listLocalImages(projectId || null);
+
+  res.json({
+    code: 200,
+    message: 'success',
+    data: images
+  });
+});
+
+router.get('/push-targets', (req, res) => {
+  res.json({
+    code: 200,
+    message: 'success',
+    data: {
+      supportedTargets: Object.values(PUSH_TARGET),
+      descriptions: {
+        [PUSH_TARGET.REGISTRY]: 'Push to a private container registry (e.g. Harbor, Docker Hub, ACR)',
+        [PUSH_TARGET.LOCAL]: 'Save image manifest to local storage directory'
+      }
+    }
+  });
+});
+
 router.post('/', (req, res) => {
-  const { projectId, imageVersion, baseImage, buildArgs } = req.body;
+  const { projectId, imageVersion, baseImage, buildArgs, pushConfig } = req.body;
 
   if (!projectId) {
     return res.status(400).json({
@@ -91,8 +117,17 @@ router.post('/', (req, res) => {
     taskId,
     imageVersion,
     baseImage,
-    buildArgs: buildArgs || {}
+    buildArgs: buildArgs || {},
+    pushConfig: pushConfig || null
   });
+
+  if (task.created === false) {
+    return res.status(400).json({
+      code: 400,
+      message: task.error,
+      data: null
+    });
+  }
 
   res.status(202).json({
     code: 202,
@@ -102,6 +137,8 @@ router.post('/', (req, res) => {
       projectId: task.projectId,
       imageVersion: task.imageVersion,
       baseImage: task.baseImage,
+      pushTarget: task.pushConfig ? task.pushConfig.target : null,
+      pushStatus: task.pushStatus,
       status: task.status,
       createdAt: task.createdAt
     }

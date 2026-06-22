@@ -1,0 +1,43 @@
+[2026-06-22T02:23:00.140Z] Build task created: 7abcdfb9-9055-481b-98ac-ab8d660940d2
+[2026-06-22T02:23:00.141Z] Project: push-test
+[2026-06-22T02:23:00.141Z] Image version: 3.0.0
+[2026-06-22T02:23:00.142Z] Base image: python:3.11-slim
+[2026-06-22T02:23:00.143Z] Merged build args: {}
+[2026-06-22T02:23:00.144Z] Push target: local
+[2026-06-22T02:23:00.146Z] Build task started...
+[2026-06-22T02:23:00.149Z] Dockerfile generated at: E:\temp\record13\558\builds\push-test\7abcdfb9-9055-481b-98ac-ab8d660940d2\Dockerfile
+[2026-06-22T02:23:00.150Z] Dockerfile content:
+FROM python:3.11-slim
+
+LABEL version="latest"
+LABEL maintainer="build-service"
+LABEL base.image="python:3.11-slim"
+
+WORKDIR /app
+
+COPY . .
+
+RUN echo "Build completed at $(date)"
+
+[2026-06-22T02:23:00.151Z] Target image tag: python:3.0.0
+[2026-06-22T02:23:00.152Z] Running docker build process...
+[2026-06-22T02:23:01.269Z] Step 1/5: FROM python:3.11-slim
+[2026-06-22T02:23:02.477Z] Step 2/5: Setting up build environment
+[2026-06-22T02:23:03.487Z] Step 3/5: Copying application files
+[2026-06-22T02:23:04.995Z] Step 4/5: Running build commands
+[2026-06-22T02:23:05.807Z] Step 5/5: Applying image version tag: 3.0.0
+[2026-06-22T02:23:06.324Z] Successfully tagged python:3.0.0
+[2026-06-22T02:23:06.325Z] Build completed successfully!
+[2026-06-22T02:23:06.326Z] Image built: python:3.0.0
+[2026-06-22T02:23:06.327Z] Initiating push to local...
+[2026-06-22T02:23:06.329Z] Saving image to local storage: E:\temp\record13\558\local-registry\push-test
+[2026-06-22T02:23:06.329Z] Image tag: python:3.0.0
+[2026-06-22T02:23:06.329Z] Writing manifest: python_3.0.0.json
+[2026-06-22T02:23:06.740Z] Creating local storage directory: E:\temp\record13\558\local-registry\push-test
+[2026-06-22T02:23:07.345Z] Saving image python:3.0.0 to local registry...
+[2026-06-22T02:23:08.157Z] Writing layer data...
+[2026-06-22T02:23:08.665Z] Writing image manifest...
+[2026-06-22T02:23:08.667Z] Image saved to: E:\temp\record13\558\local-registry\push-test\python_3.0.0.json
+[2026-06-22T02:23:08.668Z] Manifest written with 3 layers
+[2026-06-22T02:23:08.668Z] Push to local completed successfully!
+[2026-06-22T02:23:08.669Z] Saved image: E:\temp\record13\558\local-registry\push-test\python_3.0.0.json
